@@ -1,8 +1,0 @@
-10000  modulous of elasticity
-
-0.3    poisson ratio
-
-1      material thickness
-
-1      1 = plane stress; 2 = plane strain
-
