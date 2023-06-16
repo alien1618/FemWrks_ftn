@@ -1,0 +1,4 @@
+0.0     initial u @ phi = 0.0
+
+10      initial u @ phi = 1.0
+
