@@ -1,0 +1,17 @@
+1        0 = steady state, 1 = transient
+
+0.001    time step size
+
+5000      total time steps
+
+1000     PCG itrations
+
+0.0001   PCG residual tolerance
+
+100       print frequency
+
+0        print results in (vtk = 1 or (txt = 0) format
+
+1        supg 1 = true, 0 = false
+
+0.01      supg stability parameter
