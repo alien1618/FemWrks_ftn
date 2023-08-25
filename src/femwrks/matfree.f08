@@ -1,40 +1,21 @@
-module lmat_struct
-!--------------------------------------------------------------------------------------------
-! Defining local matrix data structure
-!--------------------------------------------------------------------------------------------
+module matfree_lib
 implicit none
-private
-public local
 
 type local
     integer::tot
     real(8), dimension(:,:), allocatable :: mat
 end type
-end module lmat_struct
-
-module nbr_struct
-!--------------------------------------------------------------------------------------------
-! Defining neighbours to an entity (i.e. a node or element) data structure
-!--------------------------------------------------------------------------------------------
-implicit none
-private
-public nbr
 
 type nbr
     integer::totnbrs
     integer, dimension(:), allocatable :: nbrs
 end type
-end module nbr_struct
 
-module matfree_ops
-implicit none
 contains
 
 subroutine get_ndkrnls(totnds, elems, totelems, elemnds, ndkrnls)
 !--------------------------------------------------------------------------------------------
 ! This function collects all the elements that contribute to a node
-!--------------------------------------------------------------------------------------------
-    use nbr_struct    
 !--------------------------------------------------------------------------------------------
     integer, intent(IN) :: totnds, totelems, elemnds
     integer, dimension(:,:), intent(IN) :: elems
@@ -65,10 +46,8 @@ subroutine get_lmat(k, v, krnls, totquadpnts, elems, totelems, elemnds, &
 ! the need for calculating global stiffness or mass matrices.
 ! only the force matrix is calculated globaly since it's just a 1D array
 !--------------------------------------------------------------------------------------------
-    use krnl_struct
-    use lmat_struct
-    use nbr_struct
-    use eq_slvrs
+    use krnl_lib
+    use eqslvrs_lib
 !--------------------------------------------------------------------------------------------
     real(8), dimension(:,:), intent(IN) :: v                
     real(8), intent(IN) :: k, dt, stab_prmtr
@@ -159,10 +138,8 @@ subroutine asmbl_gf_ebe(u, q, totnds, krnls, totquadpnts, elems, elemnds, dt, tr
 ! the need for calculating global stiffness or mass matrices.
 ! only the force matrix is calculated globaly since it's just a 1D array
 !--------------------------------------------------------------------------------------------
-    use krnl_struct
-    use lmat_struct
-    use nbr_struct
-    use eq_slvrs
+    use krnl_lib
+    use eqslvrs_lib
     use omp_lib
 !--------------------------------------------------------------------------------------------
     real(8), dimension(:), intent(IN) :: u
@@ -222,11 +199,9 @@ subroutine get_lmat_elst(dim, load_type, moe, nu, thick, krnls, totquadpnts, ele
 !--------------------------------------------------------------------------------------------
 ! Calculates the local matrices for elasticity
 !--------------------------------------------------------------------------------------------
-    use krnl_struct
-    use nbr_struct
-    use eq_slvrs
-    use gm_ops
-    use lmat_struct
+    use krnl_lib
+    use eqslvrs_lib
+    use gm_lib
 !--------------------------------------------------------------------------------------------
     integer, intent(IN) :: dim, load_type
     real(8), intent(IN) :: moe, nu, thick
@@ -296,8 +271,7 @@ subroutine slv_pcg_ebe(dof, F0, totnds, elems, totelems, elemnds, lmat, &
 ! Function solves for [K] {x} = {F} to obtain a solution for x using the pre-conditioned 
 ! gradient method and without constructing global matrices for [k]
 !--------------------------------------------------------------------------------------------
-    use lmat_struct
-    use bc_struct
+    use bc_lib
 !--------------------------------------------------------------------------------------------
     integer, intent(IN) :: dof, totnds, elemnds, totelems, cgitr
     real(8), dimension(:), intent(IN) :: F0
@@ -480,12 +454,11 @@ subroutine get_vms(dof, mat, msh, krnls, totquadpnts, u, vms)
 !--------------------------------------------------------------------------------------------
 ! calculates 2d and 3d von-misses stress the calculated elasticity solution
 !--------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct 
-    use krnl_struct
-    use nbr_struct
-    use mat_struct
-    use gm_ops
+    use msh_lib
+    use bc_lib
+    use krnl_lib
+    use mat_lib
+    use gm_lib
 !--------------------------------------------------------------------------------------------    
     implicit none
     type(mesh), intent(in) :: msh
@@ -612,4 +585,4 @@ subroutine get_vms(dof, mat, msh, krnls, totquadpnts, u, vms)
     end do
 end subroutine
 
-end module matfree_ops
+end module matfree_lib

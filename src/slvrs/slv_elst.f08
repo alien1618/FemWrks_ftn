@@ -6,11 +6,10 @@ subroutine run_elst()
 !---------------------------------------------------------------------------------------------
 ! Subroutine solves linear elasticity using the finite element method
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use mat_struct
-    use slvr_prmtrs_struct
-    use prmtrs
+    use msh_lib
+    use bc_lib
+    use mat_lib
+    use prmtrs_lib
 !---------------------------------------------------------------------------------------------
     implicit none
     type(mesh)               :: msh
@@ -42,20 +41,16 @@ subroutine slv_elst(msh, mat, bcs, sp)
 !---------------------------------------------------------------------------------------------
 ! Subroutine solves linear elasticity using the finite element method
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use krnl_struct
-    use nbr_struct
-    use lmat_struct
-    use mat_struct
-    use slvr_prmtrs_struct
-    use msh_ops
-    use quad_ops
-    use krnl_ops
-    use gm_ops
-    use bc_ops
-    use matfree_ops
-    use eq_slvrs
+    use msh_lib
+    use bc_lib
+    use krnl_lib
+    use mat_lib
+    use prmtrs_lib
+    use msh_lib
+    use quad_lib
+    use gm_lib
+    use matfree_lib
+    use eqslvrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh), intent(inout)               :: msh

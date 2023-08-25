@@ -7,10 +7,9 @@ subroutine run_trnsprt()
 ! Subroutine solves special cases of the general transport equation using
 ! the element-by-element finite element method without the need to form global matrices
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use slvr_prmtrs_struct
-    use prmtrs
+    use msh_lib
+    use bc_lib
+    use prmtrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh)                              :: msh      !mesh data structure
@@ -53,19 +52,14 @@ subroutine slv_trnsprt(msh, bcs, sp, k, u, v, q)
 ! Subroutine solves special cases of the general transport equation using
 ! the element-by-element finite element method without the need to form global matrices
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use krnl_struct
-    use nbr_struct
-    use lmat_struct
-    use slvr_prmtrs_struct
-    use msh_ops
-    use quad_ops
-    use krnl_ops
-    use gm_ops
-    use bc_ops
-    use matfree_ops
-    use eq_slvrs
+    use msh_lib
+    use bc_lib
+    use krnl_lib
+    use prmtrs_lib
+    use quad_lib
+    use gm_lib
+    use matfree_lib
+    use eqslvrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh), intent(in)                  :: msh      

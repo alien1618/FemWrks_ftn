@@ -7,11 +7,10 @@ subroutine run_elst_ebe()
 ! Subroutine solves linear elasticity using the element-by-element finite element method
 ! without the need to form global matrices
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use mat_struct
-    use slvr_prmtrs_struct
-    use prmtrs
+    use msh_lib
+    use bc_lib
+    use mat_lib
+    use prmtrs_lib
 !---------------------------------------------------------------------------------------------
     implicit none
     type(mesh)               :: msh
@@ -44,20 +43,15 @@ subroutine slv_elst_ebe(msh, mat, bcs, sp)
 ! Subroutine solves linear elasticity using the element-by-element finite element method
 ! without the need to form global matrices
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use krnl_struct
-    use nbr_struct
-    use lmat_struct
-    use mat_struct
-    use slvr_prmtrs_struct
-    use msh_ops
-    use quad_ops
-    use krnl_ops
-    use gm_ops
-    use bc_ops
-    use matfree_ops
-    use eq_slvrs
+    use msh_lib
+    use bc_lib
+    use krnl_lib
+    use mat_lib
+    use prmtrs_lib
+    use quad_lib
+    use gm_lib
+    use matfree_lib
+    use eqslvrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh), intent(inout)               :: msh
@@ -127,15 +121,17 @@ subroutine slv_elst_ebe(msh, mat, bcs, sp)
     write(*,'(a)') "Computing steady-state solution..."
     select case (msh%dim)
     case (2)
+        !calculate local element matrices
         call get_lmat_elst(msh%dim, mat%plane_type, mat%moe, mat%nu, mat%thickness, krnls, &
                 totquadpnts, msh%surfs, msh%totsurfs, msh%surfnds, lmat)
-         
+        !solve using pre-conditioned conjugate gradient method
         call slv_pcg_ebe(dof, gf, msh%totnds, msh%surfs, msh%totsurfs, msh%surfnds, lmat, &
                 bcs(1), sp%cgitrs, sp%tol, u)
     case (3)
+        !calculate local element matrices
         call get_lmat_elst(msh%dim, mat%plane_type, mat%moe, mat%nu, mat%thickness, krnls, &
                 totquadpnts, msh%vols, msh%totvols, msh%volnds, lmat)
-         
+        !solve using pre-conditioned conjugate gradient method
         call slv_pcg_ebe(dof, gf, msh%totnds, msh%vols, msh%totvols, msh%volnds, lmat, &
                 bcs(1), sp%cgitrs, sp%tol, u)
     end select

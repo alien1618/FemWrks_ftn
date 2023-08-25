@@ -7,10 +7,9 @@ subroutine run_ns_ebe()
 ! Subroutine solves special cases of the general transport equation using
 ! the element-by-element finite element method without the need to form global matrices
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use slvr_prmtrs_struct
-    use prmtrs
+    use msh_lib
+    use bc_lib
+    use prmtrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh)                             :: msh
@@ -48,19 +47,14 @@ subroutine slv_ns_ebe(msh, bcs, sp, nu, ro, vel, f)
 ! Subroutine solves special cases of the general transport equation using
 ! the element-by-element finite element method without the need to form global matrices
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use krnl_struct
-    use nbr_struct
-    use lmat_struct
-    use slvr_prmtrs_struct
-    use msh_ops
-    use quad_ops
-    use krnl_ops
-    use gm_ops
-    use bc_ops
-    use matfree_ops
-    use eq_slvrs
+    use msh_lib
+    use bc_lib
+    use krnl_lib
+    use prmtrs_lib
+    use quad_lib
+    use gm_lib
+    use matfree_lib
+    use eqslvrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh), intent(in)                       :: msh
@@ -107,6 +101,8 @@ subroutine slv_ns_ebe(msh, bcs, sp, nu, ro, vel, f)
                 msh%volnds, eps, eta, zta, w, elemquadpnts, krnls, totquadpnts)
     end select
 
+    !-----------------------------------------------------------------------------------------
+    !solving element-by-element without creating global matrices 
     if (sp%vtk .eqv. .true.) then
         call prnt_vtk(v, msh, v_fname, 0) 
         call prnt_vtk(p, msh, p_fname, 0)
@@ -116,82 +112,83 @@ subroutine slv_ns_ebe(msh, bcs, sp, nu, ro, vel, f)
         call prnt_elems_txt(msh%surfs, msh%totsurfs)
         call prnt_pnts_txt(v, msh%nds, msh%totnds, v_fname, 0)
         call prnt_pnts_txt(p, msh%nds, msh%totnds, p_fname, 0)
-    end if
-    !-----------------------------------------------------------------------------------------
-    !solving element-by-element without creating global matrices    
-        do t = 1, sp%nt
-            write(*,'(a,i0,a,i0)')"Processing ebe time step ", t ," of ", sp%nt
-            select case (msh%dim)
-                case (2)
-                    call get_lmat(nu, vel, krnls, totquadpnts, msh%surfs,&
-                        msh%totsurfs, msh%surfnds, sp%dt, 1, sp%supg, sp%stab_prmtr, lmat)
-
-                    call asmbl_gf_ebe(vel(:,1), f(:,1), msh%totnds, krnls, totquadpnts, msh%surfs, msh%surfnds, sp%dt, 1, gf)
-
-                    call slv_pcg_ebe(1, gf, msh%totnds, msh%surfs, msh%totsurfs, msh%surfnds, lmat, &
-                        bcs(1), sp%cgitrs, sp%tol, vx)
-                    
-                    call asmbl_gf_ebe(vel(:,2), f(:,2), msh%totnds, krnls, totquadpnts, msh%surfs, msh%surfnds, sp%dt, 1, gf)
-                    
-                    call slv_pcg_ebe(1, gf, msh%totnds, msh%surfs, msh%totsurfs, msh%surfnds, lmat, &
-                        bcs(2), sp%cgitrs, sp%tol, vy)
-                    
-                    vel(:,1) = vx
-                    vel(:,2) = vy     
-                    call slv_p_ebe(p, dpdx, dpdy, dpdz, vel, msh%totnds, krnls, totquadpnts, &
-                        msh%surfs, msh%totsurfs, msh%surfnds, ro, sp%dt, sp%cgitrs, sp%tol, bcs(4))
-                    
-                case (3)
-                    call get_lmat(nu, vel, krnls, totquadpnts, msh%vols,&
-                        msh%totvols, msh%volnds, sp%dt, 1, sp%supg, sp%stab_prmtr, lmat)
-
-                    call asmbl_gf_ebe(vel(:,1), f(:,1), msh%totnds, krnls, totquadpnts, msh%vols, msh%volnds, sp%dt, 1, gf)
-                    
-                    call slv_pcg_ebe(1, gf, msh%totnds, msh%vols, msh%totvols, msh%volnds, lmat, &
-                        bcs(1), sp%cgitrs, sp%tol, vx)                   
+    end if  
+    do t = 1, sp%nt
+        write(*,'(a,i0,a,i0)')"Processing ebe time step ", t ," of ", sp%nt
+        select case (msh%dim)
+            case (2)
+                !calculate local element matrices (projection method without P)
+                call get_lmat(nu, vel, krnls, totquadpnts, msh%surfs,&
+                    msh%totsurfs, msh%surfnds, sp%dt, 1, sp%supg, sp%stab_prmtr, lmat)
+                !calculate global force vector for vx
+                call asmbl_gf_ebe(vel(:,1), f(:,1), msh%totnds, krnls, totquadpnts, msh%surfs, msh%surfnds, sp%dt, 1, gf)
+                !solve for intermediate vx using pre-conditioned conjugte gradient
+                call slv_pcg_ebe(1, gf, msh%totnds, msh%surfs, msh%totsurfs, msh%surfnds, lmat, &
+                    bcs(1), sp%cgitrs, sp%tol, vx)
+                !calculate global force vector for vy
+                call asmbl_gf_ebe(vel(:,2), f(:,2), msh%totnds, krnls, totquadpnts, msh%surfs, msh%surfnds, sp%dt, 1, gf)
+                !solve for intermediate vy using pre-conditioned conjugte gradient
+                call slv_pcg_ebe(1, gf, msh%totnds, msh%surfs, msh%totsurfs, msh%surfnds, lmat, &
+                    bcs(2), sp%cgitrs, sp%tol, vy)
+                vel(:,1) = vx
+                vel(:,2) = vy
+                !solve for pressure and its gradients
+                call slv_p_ebe(p, dpdx, dpdy, dpdz, vel, msh%totnds, krnls, totquadpnts, &
+                    msh%surfs, msh%totsurfs, msh%surfnds, ro, sp%dt, sp%cgitrs, sp%tol, bcs(4))
+                 
+            case (3)
+                !calculate local element matrices (projection method without P)
+                call get_lmat(nu, vel, krnls, totquadpnts, msh%vols,&
+                    msh%totvols, msh%volnds, sp%dt, 1, sp%supg, sp%stab_prmtr, lmat)
+                !calculate global force vector for vx
+                call asmbl_gf_ebe(vel(:,1), f(:,1), msh%totnds, krnls, totquadpnts, msh%vols, msh%volnds, sp%dt, 1, gf)
+                !solve for intermediate vx using pre-conditioned conjugte gradient
+                call slv_pcg_ebe(1, gf, msh%totnds, msh%vols, msh%totvols, msh%volnds, lmat, &
+                    bcs(1), sp%cgitrs, sp%tol, vx)                   
+                !calculate global force vector for vy
+                call asmbl_gf_ebe(vel(:,2), f(:,2), msh%totnds, krnls, totquadpnts, msh%vols, msh%volnds, sp%dt, 1, gf)
+                !solve for intermediate vy using pre-conditioned conjugte gradient
+                call slv_pcg_ebe(1, gf, msh%totnds, msh%vols, msh%totvols, msh%volnds, lmat, &
+                    bcs(2), sp%cgitrs, sp%tol, vy) 
+                !calculate global force vector for vz
+                call asmbl_gf_ebe(vel(:,3), f(:,3), msh%totnds, krnls, totquadpnts, msh%vols, msh%volnds, sp%dt, 1, gf)
+                !solve for intermediate vz using pre-conditioned conjugte gradient
+                call slv_pcg_ebe(1, gf, msh%totnds, msh%vols, msh%totvols, msh%volnds, lmat, &
+                    bcs(3), sp%cgitrs, sp%tol, vz) 
+                 
+                vel(:,1) = vx
+                vel(:,2) = vy     
+                vel(:,3) = vz
+                !solve for pressure and its gradients
+                call slv_p_ebe(p, dpdx, dpdy, dpdz, vel, msh%totnds, krnls, totquadpnts, &
+                    msh%vols, msh%totvols, msh%volnds, ro, sp%dt, sp%cgitrs, sp%tol, bcs(4))
                   
-                    call asmbl_gf_ebe(vel(:,2), f(:,2), msh%totnds, krnls, totquadpnts, msh%vols, msh%volnds, sp%dt, 1, gf)
-                    
-                    call slv_pcg_ebe(1, gf, msh%totnds, msh%vols, msh%totvols, msh%volnds, lmat, &
-                        bcs(2), sp%cgitrs, sp%tol, vy) 
-                    
-                    call asmbl_gf_ebe(vel(:,3), f(:,3), msh%totnds, krnls, totquadpnts, msh%vols, msh%volnds, sp%dt, 1, gf)
-                    
-                    call slv_pcg_ebe(1, gf, msh%totnds, msh%vols, msh%totvols, msh%volnds, lmat, &
-                        bcs(3), sp%cgitrs, sp%tol, vz) 
-                    
-                    vel(:,1) = vx
-                    vel(:,2) = vy     
-                    vel(:,3) = vz
-
-                    call slv_p_ebe(p, dpdx, dpdy, dpdz, vel, msh%totnds, krnls, totquadpnts, &
-                         msh%vols, msh%totvols, msh%volnds, ro, sp%dt, sp%cgitrs, sp%tol, bcs(4))
-                    
-            end select
-            !write(*,'(a)') "Computing Corrected Flow Velocities Vx, Vy, Vz..."
-            vel(:,1) = vel(:,1) - dpdx * (sp%dt / ro)
-            vel(:,2) = vel(:,2) - dpdy * (sp%dt / ro)
-            vel(:,3) = vel(:,3) - dpdz * (sp%dt / ro)
-
-            call set_var(vel(:,1), bcs(1))
-            call set_var(vel(:,2), bcs(2))
-            call set_var(vel(:,3), bcs(3))
-
-            v = sqrt(vel(:,1)*vel(:,1) + vel(:,2)*vel(:,2) + vel(:,3)*vel(:,3))
+        end select
+        !Computing corrected flow velocities vx, vy, vz...
+        vel(:,1) = vel(:,1) - dpdx * (sp%dt / ro)
+        vel(:,2) = vel(:,2) - dpdy * (sp%dt / ro)
+        vel(:,3) = vel(:,3) - dpdz * (sp%dt / ro)
             
-            if (t/sp%prnt_frq == cntr) then
-                cntr = cntr + 1
-                write(*,'(a)') "Printing Solutions to File..."
-                if (sp%vtk .eqv. .true.) then
-                    call prnt_vtk(v, msh, v_fname, t) 
-                    call prnt_vtk(p, msh, p_fname, t)
-                    call prnt_vec_vtk(vel, msh, vec_fname, t)
-                else
-                    call prnt_pnts_txt(v, msh%nds, msh%totnds, v_fname, t)
-                    call prnt_pnts_txt(p, msh%nds, msh%totnds, p_fname, t)
-                end if
+        !apply boundary conditions
+        call set_var(vel(:,1), bcs(1))
+        call set_var(vel(:,2), bcs(2))
+        call set_var(vel(:,3), bcs(3))
+
+        v = sqrt(vel(:,1)*vel(:,1) + vel(:,2)*vel(:,2) + vel(:,3)*vel(:,3))
+           
+        if (t/sp%prnt_frq == cntr) then
+            cntr = cntr + 1
+            write(*,'(a)') "Printing Solutions to File..."
+            if (sp%vtk .eqv. .true.) then
+                call prnt_vtk(v, msh, v_fname, t) 
+                call prnt_vtk(p, msh, p_fname, t)
+                call prnt_vec_vtk(vel, msh, vec_fname, t)
+            else
+                call prnt_pnts_txt(v, msh%nds, msh%totnds, v_fname, t)
+                call prnt_pnts_txt(p, msh%nds, msh%totnds, p_fname, t)
             end if
-        end do
+        end if
+    end do
 end subroutine slv_ns_ebe
 
 subroutine slv_p_ebe(p, dpdx, dpdy, dpdz, v, totnds, krnls, totquadpnts, elems, totelems, elemnds, &
@@ -200,13 +197,10 @@ subroutine slv_p_ebe(p, dpdx, dpdy, dpdz, v, totnds, krnls, totquadpnts, elems, 
 ! Function solves for fluid flow pressure using the element-by-element finite elements
 ! without the need to construct global matrices
 !--------------------------------------------------------------------------------------------
-    use krnl_struct
-    use lmat_struct
-    use nbr_struct
-    use bc_struct
-    use eq_slvrs
-    use bc_ops
-    use matfree_ops
+    use krnl_lib
+    use bc_lib
+    use eqslvrs_lib
+    use matfree_lib
 
     real(8), dimension(:), allocatable, intent(INOUT) :: p
     real(8), dimension(:,:), intent(IN)               :: v                

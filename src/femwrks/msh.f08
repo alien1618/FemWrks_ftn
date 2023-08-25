@@ -1,9 +1,8 @@
-module msh_struct
+module msh_lib
 implicit none
-private
-public mesh
+
 !-----------------------------------------------------------------------
-! defining kernel data structure
+! defining mesh data structure
 !-----------------------------------------------------------------------
 type mesh
     real(8), dimension(:,:), allocatable :: nds
@@ -14,17 +13,12 @@ type mesh
     real(8) :: dx
 end type
 
-end module msh_struct
 
-module msh_ops
-implicit none
 contains
 
 subroutine gen_gridpnts3d(p,ln,n,msh)
 !-----------------------------------------------------------------------
 ! Generate 3D grid points
-!-----------------------------------------------------------------------
-    use msh_struct
 !-----------------------------------------------------------------------   
     integer, dimension(3), intent(IN) :: n
     real(8), dimension(3), intent(IN) :: p, ln
@@ -33,6 +27,7 @@ subroutine gen_gridpnts3d(p,ln,n,msh)
 !-----------------------------------------------------------------------
     integer :: i, j, k, l
     real(8) :: dx, dy, dz
+    real(8), dimension(:,:), allocatable :: tmp
 !-----------------------------------------------------------------------
 
     msh%dim = 3
@@ -40,27 +35,31 @@ subroutine gen_gridpnts3d(p,ln,n,msh)
     dy = ln(2)/(n(2)-1)
     dz = ln(3)/(n(3)-1)
     msh%totnds = n(1)*n(2)*n(3);
-    allocate(msh%nds(msh%totnds+1,3))
-    msh%nds(1,1) = p(1)
-    msh%nds(1,2) = p(2)
-    msh%nds(1,3) = p(3)
+
+    allocate(tmp(msh%totnds + 1, 3))
+    tmp(1,1) = p(1)
+    tmp(1,2) = p(2)
+    tmp(1,3) = p(3)
     l = 1;
     do k=1,n(3)
         do j=1,n(2)
             do i=1,n(1)
-                msh%nds(l+1,1) = msh%nds(l,1) + dx;
-                msh%nds(l+1,2) = msh%nds(l,2);
-                msh%nds(l+1,3) = msh%nds(l,3)
+                tmp(l+1,1) = tmp(l,1) + dx;
+                tmp(l+1,2) = tmp(l,2);
+                tmp(l+1,3) = tmp(l,3)
                 l = l+1;
             end do
-            msh%nds(l,1) = msh%nds(1,1)
-            msh%nds(l,2) = msh%nds(l,2) + dy
-            msh%nds(l,3) = msh%nds(l,3)
+            tmp(l,1) = tmp(1,1)
+            tmp(l,2) = tmp(l,2) + dy
+            tmp(l,3) = tmp(l,3)
         end do
-        msh%nds(l,1) = p(1)
-        msh%nds(l,2) = p(2)
-        msh%nds(l,3) = msh%nds(l,3) + dz
+        tmp(l,1) = p(1)
+        tmp(l,2) = p(2)
+        tmp(l,3) = tmp(l,3) + dz
     end do
+    allocate(msh%nds(msh%totnds, 3))
+    msh%nds = tmp(1:msh%totnds, 1:3)
+    deallocate(tmp)
     write(*,'(a,i0)') "totnds = ", msh%totnds
 
 end subroutine gen_gridpnts3d
@@ -69,8 +68,6 @@ subroutine gen_quadgrid(p, ln, n, msh)
 !-----------------------------------------------------------------------
 ! Generate first-order quadrilateral grid
 !-----------------------------------------------------------------------
-    use msh_struct
-!-----------------------------------------------------------------------
     integer, dimension(3), intent(IN) :: n
     real(8), dimension(3), intent(IN) :: p, ln
 !-----------------------------------------------------------------------
@@ -78,6 +75,7 @@ subroutine gen_quadgrid(p, ln, n, msh)
 !-----------------------------------------------------------------------
     integer :: elems_x, elems_y, i, j, k, l
     integer, dimension(:), allocatable :: nd
+    real(8), dimension(:,:), allocatable :: tmp
     real(8) :: dx, dy
 !-----------------------------------------------------------------------
 
@@ -91,25 +89,28 @@ subroutine gen_quadgrid(p, ln, n, msh)
     msh%surfshape = 2;
     msh%surfnds=4;
     msh%totsurfs = elems_x * elems_y
-    allocate(msh%nds(msh%totnds+1,3))
+    allocate(tmp(msh%totnds + 1, 3))
     allocate(nd(msh%totnds))
     allocate(msh%surfs(msh%totsurfs+1,msh%surfnds))
     
-    msh%nds(1,1) = p(1)
-    msh%nds(1,2) = p(2)
-    msh%nds(1,3) = 0
+    tmp(1,1) = p(1)
+    tmp(1,2) = p(2)
+    tmp(1,3) = 0
     l = 1;
     do j=1,n(2)
         do i=1,n(1)
-            msh%nds(l+1,1) = msh%nds(l,1) + dx;
-            msh%nds(l+1,2) = msh%nds(l,2);
-            msh%nds(l+1,3) = 0
+            tmp(l+1,1) = tmp(l,1) + dx;
+            tmp(l+1,2) = tmp(l,2);
+            tmp(l+1,3) = 0
             l = l+1;
         end do
-        msh%nds(l,1) = msh%nds(1,1)
-        msh%nds(l,2) = msh%nds(l,2) + dy
-        msh%nds(l,3) = 0
+        tmp(l,1) = tmp(1,1)
+        tmp(l,2) = tmp(l,2) + dy
+        tmp(l,3) = 0
     end do
+    allocate(msh%nds(msh%totnds, 3))
+    msh%nds = tmp(1:msh%totnds, 1:3)
+    deallocate(tmp)
 
     do i=1,msh%totnds
        nd(i) = i
@@ -138,8 +139,6 @@ end subroutine gen_quadgrid
 subroutine gen_hexgrid(p,ln,n,msh)
 !-----------------------------------------------------------------------
 ! Generate first_order hexahedral grid
-!-----------------------------------------------------------------------
-    use msh_struct
 !-----------------------------------------------------------------------
     integer, dimension(3), intent(IN) :: n
     real(8), dimension(3), intent(IN) :: p, ln
@@ -231,8 +230,6 @@ end subroutine gen_hexgrid
 subroutine gen_tetgrid(p,ln,n,msh)
 !-----------------------------------------------------------------------
 ! Generate first_order tetrahedral grid
-!-----------------------------------------------------------------------
-    use msh_struct
 !-----------------------------------------------------------------------
     integer, dimension(3), intent(IN) :: n
     real(8), dimension(3), intent(IN) :: p, ln
@@ -375,8 +372,6 @@ subroutine gen_trigrid(p,ln,n,msh)
 !-----------------------------------------------------------------------
 ! Generate first_order triangular grid
 !-----------------------------------------------------------------------
-    use msh_struct
-!-----------------------------------------------------------------------
     integer, dimension(3), intent(IN) :: n
     real(8), dimension(3), intent(IN) :: p, ln
 !-----------------------------------------------------------------------
@@ -384,6 +379,7 @@ subroutine gen_trigrid(p,ln,n,msh)
 !-----------------------------------------------------------------------
     integer :: elems_x, elems_y, i, j, k, l
     integer, dimension(:), allocatable :: nd
+    real(8), dimension(:,:), allocatable :: tmp
     real(8) :: dx, dy
 !-----------------------------------------------------------------------
 
@@ -399,22 +395,25 @@ subroutine gen_trigrid(p,ln,n,msh)
     allocate(msh%surfs(msh%totsurfs, msh%surfnds))
 
     msh%totnds = (elems_x+1)*(elems_y+1)
-    allocate(msh%nds(msh%totnds+1,3))
-    msh%nds(1,1) = p(1)
-    msh%nds(1,2) = p(2)
-    msh%nds(1,3) = 0
+    allocate(tmp(msh%totnds + 1, 3))
+    tmp(1,1) = p(1)
+    tmp(1,2) = p(2)
+    tmp(1,3) = 0
     l = 1;
     do j=1,n(2)
         do i=1,n(1)
-            msh%nds(l+1,1) = msh%nds(l,1) + dx;
-            msh%nds(l+1,2) = msh%nds(l,2);
-            msh%nds(l+1,3) = 0
+            tmp(l+1,1) = tmp(l,1) + dx;
+            tmp(l+1,2) = tmp(l,2);
+            tmp(l+1,3) = 0
             l = l+1;
         end do
-        msh%nds(l,1) = msh%nds(1,1)
-        msh%nds(l,2) = msh%nds(l,2) + dy
-        msh%nds(l,3) = 0
+        tmp(l,1) = tmp(1,1)
+        tmp(l,2) = tmp(l,2) + dy
+        tmp(l,3) = 0
     end do
+    allocate(msh%nds(msh%totnds, 3))
+    msh%nds = tmp(1:msh%totnds, 1:3)
+    deallocate(tmp)
 
     allocate(nd(msh%totnds))
     do i = 1, msh%totnds
@@ -453,8 +452,6 @@ subroutine gen_trigrid2(p, ln, n, msh)
 !-----------------------------------------------------------------------
 ! Generate first_order triangular grid
 !-----------------------------------------------------------------------
-    use msh_struct
-!-----------------------------------------------------------------------
     integer, dimension(3), intent(IN) :: n
     real(8), dimension(3), intent(IN) :: p, ln
 !-----------------------------------------------------------------------
@@ -462,6 +459,7 @@ subroutine gen_trigrid2(p, ln, n, msh)
 !-----------------------------------------------------------------------
     integer :: elems_x, elems_y, i, j, k, l
     integer, dimension(:), allocatable :: nd
+    real(8), dimension(:,:), allocatable :: tmp
     real(8) :: dx, dy
 !-----------------------------------------------------------------------
 
@@ -477,22 +475,25 @@ subroutine gen_trigrid2(p, ln, n, msh)
     allocate(msh%surfs(msh%totsurfs, msh%surfnds))
 
     msh%totnds = (elems_x+1)*(elems_y+1)
-    allocate(msh%nds(msh%totnds+1,3))
-    msh%nds(1,1) = p(1)
-    msh%nds(1,2) = p(2)
-    msh%nds(1,3) = 0
+    allocate(tmp(msh%totnds + 1, 3))
+    tmp(1,1) = p(1)
+    tmp(1,2) = p(2)
+    tmp(1,3) = 0
     l = 1;
     do j=1,n(2)
         do i=1,n(1)
-            msh%nds(l+1,1) = msh%nds(l,1) + dx;
-            msh%nds(l+1,2) = msh%nds(l,2);
-            msh%nds(l+1,3) = 0
+            tmp(l+1,1) = tmp(l,1) + dx;
+            tmp(l+1,2) = tmp(l,2);
+            tmp(l+1,3) = 0
             l = l+1;
         end do
-        msh%nds(l,1) = msh%nds(1,1)
-        msh%nds(l,2) = msh%nds(l,2) + dy
-        msh%nds(l,3) = 0
+        tmp(l,1) = tmp(1,1)
+        tmp(l,2) = tmp(l,2) + dy
+        tmp(l,3) = 0
     end do
+    allocate(msh%nds(msh%totnds, 3))
+    msh%nds = tmp(1:msh%totnds, 1:3)
+    deallocate(tmp)
 
     allocate(nd(msh%totnds))
     do i = 1, msh%totnds
@@ -520,8 +521,6 @@ end subroutine gen_trigrid2
 subroutine prnt_vtk(u, msh, fname, t)
 !-----------------------------------------------------------------------
 ! Print field variable u and mesh in VTK format
-!-----------------------------------------------------------------------
-    use msh_struct
 !-----------------------------------------------------------------------
     type(mesh), intent(IN) :: msh                  
     integer, intent(IN) :: t
@@ -587,8 +586,6 @@ end subroutine prnt_vtk
 subroutine prnt_vec_vtk(vel, msh, fname, t)
 !-----------------------------------------------------------------------
 ! Print vectors vel and mesh in VTK format
-!-----------------------------------------------------------------------
-    use msh_struct
 !-----------------------------------------------------------------------
     type(mesh), intent(IN) :: msh                  
     integer, intent(IN) :: t
@@ -693,8 +690,6 @@ subroutine read_pnts(mesh_fname, ps)
 !-----------------------------------------------------------------------
 ! Read mesh nodes
 !-----------------------------------------------------------------------
-    use msh_struct
-!-----------------------------------------------------------------------
     character(len=50), intent(IN) :: mesh_fname
 !-----------------------------------------------------------------------
     type(mesh), intent(OUT) :: ps
@@ -734,8 +729,6 @@ subroutine read_surfs(mesh_fname, ps)
 !-----------------------------------------------------------------------
 ! Read 2D mesh elements (surfaces)
 !-----------------------------------------------------------------------
-    use msh_struct
-!-----------------------------------------------------------------------
     character(len=50), intent(IN) :: mesh_fname
 !-----------------------------------------------------------------------
     type(mesh), intent(INOUT) :: ps
@@ -768,8 +761,6 @@ end subroutine read_surfs
 subroutine read_vols(mesh_fname, ps)
 !-----------------------------------------------------------------------
 ! Read 3D mesh elements (volumes)
-!-----------------------------------------------------------------------
-    use msh_struct
 !-----------------------------------------------------------------------
     character(len=50), intent(IN) :: mesh_fname
 !-----------------------------------------------------------------------
@@ -877,6 +868,6 @@ subroutine get_avg_dx(pnts, avg_dx)
     avg_dx = dminf;
     write(*,'(a,f10.3)') "Average dx = ", avg_dx
 end subroutine get_avg_dx
-end module msh_ops
+end module msh_lib
 
 

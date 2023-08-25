@@ -1,16 +1,16 @@
-program FemWrks
+program femwrks
     use trnsprt
     use elst
     use ns
     use trnsprt_ebe
     use elst_ebe
     use ns_ebe
-    use prmtrs
+    use prmtrs_lib
 !---------------------------------------------------------------------------------------------
     integer :: n
 !---------------------------------------------------------------------------------------------
     
-    call set_slvr(n) 
+    n = set_slvr()
     select case (n)
         case (1)
             call run_trnsprt_ebe()
@@ -25,4 +25,4 @@ program FemWrks
         case (6)
             call run_ns()
     end select
-end program FemWrks
+end program femwrks

@@ -7,10 +7,9 @@ subroutine run_ns()
 ! Subroutine solves special cases of the general transport equation using
 ! the finite element method.
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use slvr_prmtrs_struct
-    use prmtrs
+    use msh_lib
+    use bc_lib
+    use prmtrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh)                              :: msh
@@ -47,19 +46,14 @@ subroutine slv_ns(msh, bcs, sp, nu, ro, vel, f)
 ! Subroutine solves special cases of the general transport equation using
 ! the finite element method.
 !---------------------------------------------------------------------------------------------
-    use msh_struct
-    use bc_struct
-    use krnl_struct
-    use nbr_struct
-    use lmat_struct
-    use slvr_prmtrs_struct
-    use msh_ops
-    use quad_ops
-    use krnl_ops
-    use gm_ops
-    use bc_ops
-    use matfree_ops
-    use eq_slvrs
+    use msh_lib
+    use bc_lib
+    use krnl_lib
+    use quad_lib
+    use gm_lib
+    use matfree_lib
+    use eqslvrs_lib
+    use prmtrs_lib
     implicit none
 !---------------------------------------------------------------------------------------------
     type(mesh), intent(in)                    :: msh
@@ -116,84 +110,84 @@ subroutine slv_ns(msh, bcs, sp, nu, ro, vel, f)
     end if
     !-----------------------------------------------------------------------------------------
     !constructing and solving global matrices
-        allocate(gk(msh%totnds, msh%totnds))
-        allocate(gm(msh%totnds, msh%totnds))
-        allocate(gf(msh%totnds))
+    allocate(gk(msh%totnds, msh%totnds))
+    allocate(gm(msh%totnds, msh%totnds))
+    allocate(gf(msh%totnds))
 
-        do t = 1, sp%nt
-            write(*,'(a,i0,a,i0)')"Processing Time Step ", t ," of ", sp%nt
-            select case(msh%dim)
-                case (2)               
-                    !write(*,'(a)') "Assembling global matrices..."
-                    call asmbl_diff_mat(gk, sp%supg, msh%totnds, &
-                        msh%surfs, msh%surfnds, krnls, totquadpnts, nu, vel, sp%stab_prmtr)
-                    call asmbl_mass_mat(gm, sp%supg, msh%totnds, &
-                        msh%surfs, msh%surfnds, krnls, totquadpnts, vel, sp%stab_prmtr)
+    do t = 1, sp%nt
+        write(*,'(a,i0,a,i0)')"Processing Time Step ", t ," of ", sp%nt
+        select case(msh%dim)
+            case (2)               
+                !write(*,'(a)') "Assembling global matrices..."
+                call asmbl_diff_mat(gk, sp%supg, msh%totnds, &
+                    msh%surfs, msh%surfnds, krnls, totquadpnts, nu, vel, sp%stab_prmtr)
+                call asmbl_mass_mat(gm, sp%supg, msh%totnds, &
+                    msh%surfs, msh%surfnds, krnls, totquadpnts, vel, sp%stab_prmtr)
                     
-                    !write(*,'(a)') "Calculating Intermediate Vx..."
-                    gf = f(:,1)
-                    call set_dbc_trans(msh%totnds, bcs(1), gk, gm, gf)
-                    call slv_syseq(1, vel(:,1), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
+                !write(*,'(a)') "Calculating Intermediate Vx..."
+                gf = f(:,1)
+                call set_dbc_trans(msh%totnds, bcs(1), gk, gm, gf)
+                call slv_syseq(1, vel(:,1), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
 
-                    !write(*,'(a)') "Calculating Intermediate Vy..."
-                    gf = f(:,2)
-                    call set_dbc_trans(msh%totnds, bcs(2), gk, gm, gf)
-                    call slv_syseq(1, vel(:,2), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
+                !write(*,'(a)') "Calculating Intermediate Vy..."
+                gf = f(:,2)
+                call set_dbc_trans(msh%totnds, bcs(2), gk, gm, gf)
+                call slv_syseq(1, vel(:,2), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
 
-                    !write(*,'(a)') "Solving the Poisson Equation for Pressure..."
-                    call slv_p(P, dpdx, dpdy, dpdz, bcs(4), sp%dt, vel, &
-                        msh%totnds, msh%surfs, msh%surfnds, krnls, totquadpnts, ro, sp%cgitrs, sp%tol)
-                case (3)
-                    !write(*,'(a)') "Assembling global matrices..."
-                    call asmbl_diff_mat(gk, sp%supg, msh%totnds, &
-                        msh%vols, msh%volnds, krnls, totquadpnts, nu, vel, sp%stab_prmtr)
-                    call asmbl_mass_mat(gm, sp%supg, msh%totnds, &
-                        msh%vols, msh%volnds, krnls, totquadpnts, vel, sp%stab_prmtr)
+                !write(*,'(a)') "Solving the Poisson Equation for Pressure..."
+                call slv_p(P, dpdx, dpdy, dpdz, bcs(4), sp%dt, vel, &
+                    msh%totnds, msh%surfs, msh%surfnds, krnls, totquadpnts, ro, sp%cgitrs, sp%tol)
+            case (3)
+                !write(*,'(a)') "Assembling global matrices..."
+                call asmbl_diff_mat(gk, sp%supg, msh%totnds, &
+                    msh%vols, msh%volnds, krnls, totquadpnts, nu, vel, sp%stab_prmtr)
+                call asmbl_mass_mat(gm, sp%supg, msh%totnds, &
+                    msh%vols, msh%volnds, krnls, totquadpnts, vel, sp%stab_prmtr)
                                 
-                    !write(*,'(a)') "Calculating Intermediate Vx..."
-                    gf = f(:,1)
-                    call set_dbc_trans(msh%totnds, bcs(1), gk, gm, gf)
-                    call slv_syseq(1, vel(:,1), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
+                !write(*,'(a)') "Calculating Intermediate Vx..."
+                gf = f(:,1)
+                call set_dbc_trans(msh%totnds, bcs(1), gk, gm, gf)
+                call slv_syseq(1, vel(:,1), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
 
-                    !write(*,'(a)') "Calculating Intermediate Vy..."
-                    gf = f(:,2)
-                    call set_dbc_trans(msh%totnds, bcs(2), gk, gm, gf)
-                    call slv_syseq(1, vel(:,2), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
+                !write(*,'(a)') "Calculating Intermediate Vy..."
+                gf = f(:,2)
+                call set_dbc_trans(msh%totnds, bcs(2), gk, gm, gf)
+                call slv_syseq(1, vel(:,2), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
 
-                    !write(*,'(a)') "Calculating Intermediate Vz..."
-                    gf = f(:,3)
-                    call set_dbc_trans(msh%totnds, bcs(3), gk, gm, gf)
-                    call slv_syseq(1, vel(:,3), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
+                !write(*,'(a)') "Calculating Intermediate Vz..."
+                gf = f(:,3)
+                call set_dbc_trans(msh%totnds, bcs(3), gk, gm, gf)
+                call slv_syseq(1, vel(:,3), gk, gm, gf, msh%totnds, sp%dt, sp%cgitrs, sp%tol)
 
-                    write(*,'(a)') "Solving the Poisson Equation for Pressure..."
-                    call slv_p(P, dpdx, dpdy, dpdz, bcs(4), sp%dt, vel, &
-                    msh%totnds, msh%vols, msh%volnds, krnls, totquadpnts, ro, sp%cgitrs, sp%tol)
-            end select
+                !write(*,'(a)') "Solving the Poisson Equation for Pressure..."
+                call slv_p(P, dpdx, dpdy, dpdz, bcs(4), sp%dt, vel, &
+                msh%totnds, msh%vols, msh%volnds, krnls, totquadpnts, ro, sp%cgitrs, sp%tol)
+        end select
 
-            !write(*,'(a)') "Computing Corrected Flow Velocities Vx, Vy, Vz..."
-            vel(:,1) = vel(:,1) - dpdx * (sp%dt / ro)
-            vel(:,2) = vel(:,2) - dpdy * (sp%dt / ro)
-            vel(:,3) = vel(:,3) - dpdz * (sp%dt / ro)
+        !write(*,'(a)') "Computing Corrected Flow Velocities Vx, Vy, Vz..."
+        vel(:,1) = vel(:,1) - dpdx * (sp%dt / ro)
+        vel(:,2) = vel(:,2) - dpdy * (sp%dt / ro)
+        vel(:,3) = vel(:,3) - dpdz * (sp%dt / ro)
 
-            call set_var(vel(:,1), bcs(1))
-            call set_var(vel(:,2), bcs(2))
-            call set_var(vel(:,3), bcs(3))
+        call set_var(vel(:,1), bcs(1))
+        call set_var(vel(:,2), bcs(2))
+        call set_var(vel(:,3), bcs(3))
 
-            v = sqrt(vel(:,1)*vel(:,1) + vel(:,2)*vel(:,2) + vel(:,3)*vel(:,3))
+        v = sqrt(vel(:,1)*vel(:,1) + vel(:,2)*vel(:,2) + vel(:,3)*vel(:,3))
             
-            if (t/sp%prnt_frq == cntr) then
-                cntr = cntr + 1
-                write(*,'(a)') "Printing Solutions to File..."
-                if (sp%vtk .eqv. .true.) then
-                    call prnt_vtk(v, msh, v_fname, t) 
-                    call prnt_vtk(p, msh, p_fname, t)
-                    call prnt_vec_vtk(vel, msh, vec_fname, t)
-                else
-                    call prnt_pnts_txt(v, msh%nds, msh%totnds, v_fname, t)
-                    call prnt_pnts_txt(p, msh%nds, msh%totnds, p_fname, t)
-                end if
+        if (t/sp%prnt_frq == cntr) then
+            cntr = cntr + 1
+            write(*,'(a)') "Printing Solutions to File..."
+            if (sp%vtk .eqv. .true.) then
+                call prnt_vtk(v, msh, v_fname, t) 
+                call prnt_vtk(p, msh, p_fname, t)
+                call prnt_vec_vtk(vel, msh, vec_fname, t)
+            else
+                call prnt_pnts_txt(v, msh%nds, msh%totnds, v_fname, t)
+                call prnt_pnts_txt(p, msh%nds, msh%totnds, p_fname, t)
             end if
-        end do
+        end if
+    end do
 end subroutine slv_ns
 
 subroutine slv_p(p, dpdx, dpdy, dpdz, bc_p, dt, &
@@ -201,11 +195,10 @@ subroutine slv_p(p, dpdx, dpdy, dpdz, bc_p, dt, &
 !---------------------------------------------------------------------------------------------
 ! CONSTRUCTION AND SOLUTION OF GLOBAL MATRICES FOR PRESSURE
 !---------------------------------------------------------------------------------------------  
-    use krnl_struct
-    use bc_struct
-    use eq_slvrs
-    use gm_ops
-    use bc_ops
+    use krnl_lib
+    use bc_lib
+    use eqslvrs_lib
+    use gm_lib
 
     real(8), dimension(:,:), intent(IN)                :: vel
     integer, intent(IN)                             :: totnds, elemnds, totquadpnts, cgitr

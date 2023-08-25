@@ -1,20 +1,4 @@
-module slvr_prmtrs_struct
-!-----------------------------------------------------------------------
-! defining solver parameters data structure
-!-----------------------------------------------------------------------
-implicit none
-private
-public slvr_prmtrs
-
-type slvr_prmtrs
-    integer :: slvr, transient, nt, cgitrs, prnt_frq
-    real(8) :: dt, tol, stab_prmtr
-    logical :: vtk, supg
-end type
-
-end module slvr_prmtrs_struct
-
-module mat_struct
+module mat_lib
 !-----------------------------------------------------------------------
 ! defining material properties data structure
 !-----------------------------------------------------------------------
@@ -27,10 +11,17 @@ type material
     integer :: plane_type
 end type
 
-end module mat_struct
+end module mat_lib
 
-module prmtrs
+module prmtrs_lib
 implicit none
+
+type slvr_prmtrs
+    integer :: slvr, transient, nt, cgitrs, prnt_frq
+    real(8) :: dt, tol, stab_prmtr
+    logical :: vtk, supg
+end type
+
 contains
 
 subroutine read_array(fname, data, file_exists)
@@ -67,8 +58,7 @@ subroutine read_array(fname, data, file_exists)
 end subroutine read_array
 
 subroutine set_msh(msh)
-    use msh_struct
-    use msh_ops
+    use msh_lib
     implicit none
 !-----------------------------------------------------------------------
     type(mesh), intent(out) :: msh
@@ -128,12 +118,10 @@ subroutine set_msh(msh)
     call get_avg_dx(msh%nds, msh%dx)
 end subroutine set_msh
 
-subroutine set_slvr(slvr)
-!-----------------------------------------------------------------------
-    use slvr_prmtrs_struct
+function set_slvr() result(slvr)
     implicit none
 !-----------------------------------------------------------------------
-    integer, intent(out) :: slvr
+    integer :: slvr
 !-----------------------------------------------------------------------
     real(8), dimension(:), allocatable      :: data
     character*50 :: fname = 'sim/in/5_ctrl/slvr.txt'
@@ -147,11 +135,9 @@ subroutine set_slvr(slvr)
         write(*,'(a)') "ERROR: sim/in/5_ctrl/slvr.txt does not exist. Can not proceed without this file. Exiting..."
         call exit()
     end if
-end subroutine set_slvr
+end function set_slvr
 
 subroutine set_ctrls(sp)
-!-----------------------------------------------------------------------
-    use slvr_prmtrs_struct
     implicit none
 !-----------------------------------------------------------------------
     type(slvr_prmtrs), intent(inout)        :: sp   !solver parameters data structure
@@ -181,9 +167,7 @@ subroutine set_ctrls(sp)
 end subroutine set_ctrls
 
 subroutine set_elst(mat)
-
-    use slvr_prmtrs_struct
-    use mat_struct
+    use mat_lib
     implicit none
 !-----------------------------------------------------------------------
     type(material), intent(out) :: mat   !solver parameters data structure
@@ -206,8 +190,7 @@ subroutine set_elst(mat)
 end subroutine set_elst
 
 subroutine set_bc(pnts, totpnts, bcs)
-    use bc_struct
-    use bc_ops
+    use bc_lib
 !-----------------------------------------------------------------------
     real(8), dimension(:,:), intent(in) :: pnts
     integer, intent(in) :: totpnts
@@ -278,7 +261,6 @@ subroutine set_bc(pnts, totpnts, bcs)
 end subroutine set_bc
 
 subroutine set_u0(phi, totpnts, u)
-
     use, intrinsic :: iso_fortran_env, Only : iostat_end
     implicit none
 !-----------------------------------------------------------------------
@@ -758,7 +740,7 @@ subroutine get_avg_dx(pnts, avg_dx)
     write(*,'(a,f10.3)') "Average dx = ", avg_dx
 end subroutine get_avg_dx
 
-end module prmtrs
+end module prmtrs_lib
 
 
 

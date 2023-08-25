@@ -1,4 +1,4 @@
-module quad_ops
+module quad_lib
 implicit none
 contains
 
@@ -399,5 +399,5 @@ subroutine tri(num_pts, eps, eta, zta, w, integ_pts)
             w(7) = w3
     end select
 end subroutine tri
-end module quad_ops
+end module quad_lib
 

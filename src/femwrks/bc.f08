@@ -1,9 +1,8 @@
-module bc_struct
+module bc_lib
 implicit none
-private
-public bc
+
 !-----------------------------------------------------------------------
-! defining kernel data structure
+! defining boundary condition data structure
 !-----------------------------------------------------------------------
 type bc
     integer, dimension(:), allocatable :: pnts
@@ -11,10 +10,6 @@ type bc
     integer :: tot
 end type
 
-end module bc_struct
-
-module bc_ops
-implicit none
 contains
 
 subroutine set_dbc(pnts, totpnts, edge, loc, value, bc_out)
@@ -22,7 +17,6 @@ subroutine set_dbc(pnts, totpnts, edge, loc, value, bc_out)
 ! Collecting boundary-condition nodes in a specified location
 ! and assigning a value to them
 !-----------------------------------------------------------------------
-    use bc_struct
     implicit none
     real(8), dimension(:,:), intent(IN) :: pnts
     integer,intent(IN) :: totpnts, edge
@@ -85,9 +79,7 @@ subroutine read_dbc(bc_fname, value, mshpnts, mshtotpnts, bc_out)
 !-----------------------------------------------------------------------
 ! Reading the set of boundary-condition nodes from an input file
 !-----------------------------------------------------------------------
-    use msh_ops
-    use msh_struct
-    use bc_struct
+    use msh_lib
 !-----------------------------------------------------------------------
     real(8), dimension(:,:), intent(IN) :: mshpnts
     integer, intent(IN) :: mshtotpnts
@@ -121,8 +113,6 @@ subroutine set_var(u, bcs)
 ! Sets the value of an array to the specified Direchlet boundary 
 ! condition values
 !-----------------------------------------------------------------------
-    use bc_struct
-!-----------------------------------------------------------------------
     type(bc), intent(in) :: bcs
 !-----------------------------------------------------------------------
     real(8), dimension(:), intent(INOUT) :: u
@@ -130,5 +120,5 @@ subroutine set_var(u, bcs)
     if (bcs%tot > 0) u(bcs%pnts(:)) = bcs%vals(:)
 end subroutine set_var
 
-end module bc_ops
+end module bc_lib
 

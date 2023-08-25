@@ -1,4 +1,4 @@
-module eq_slvrs
+module eqslvrs_lib
 implicit none
 contains
 
@@ -271,4 +271,4 @@ subroutine mul_trnsp(A, B, C, s)
     end do
 end subroutine mul_trnsp
 
-end module eq_slvrs
+end module eqslvrs_lib

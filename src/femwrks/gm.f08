@@ -1,4 +1,4 @@
-module gm_ops
+module gm_lib
 implicit none
 contains
 
@@ -7,8 +7,8 @@ subroutine asmbl_diff_mat(gk, supg, totnds, &
 !----------------------------------------------------------------------------------
 ! Assemble the global advection-diffusion matrix
 !----------------------------------------------------------------------------------
-    use krnl_struct
-    use eq_slvrs
+    use krnl_lib
+    use eqslvrs_lib
 !----------------------------------------------------------------------------------
     logical, intent(IN) :: supg
     integer, intent(IN) :: totnds, elemnds, totquadpnts
@@ -95,8 +95,8 @@ subroutine asmbl_stiff_mat(gk, dim, load_type, moe, nu, t, totnds, krnls, totqua
 !----------------------------------------------------------------------------------
 ! Assemble the global stiffness matrix
 !----------------------------------------------------------------------------------
-    use eq_slvrs
-    use krnl_struct
+    use eqslvrs_lib
+    use krnl_lib
 !----------------------------------------------------------------------------------
     integer, intent(IN) :: dim, load_type, totnds, elemnds, totquadpnts
     real(8), intent(IN) :: moe, nu, t
@@ -158,8 +158,8 @@ subroutine asmbl_mass_mat(gm, supg, totnds, &
 !----------------------------------------------------------------------------------
 ! Assemble the global mass matrix
 !----------------------------------------------------------------------------------
-    use krnl_struct
-    use eq_slvrs
+    use krnl_lib
+    use eqslvrs_lib
 !----------------------------------------------------------------------------------
     logical, intent(IN) :: supg
     integer, intent(IN) :: totnds, elemnds, totquadpnts
@@ -240,7 +240,7 @@ subroutine asmbl_force_mat(gf, q, totnds, krnls, totquadpnts, elems, elemnds)
 !----------------------------------------------------------------------------------
 ! Assemble the global force matrix
 !----------------------------------------------------------------------------------
-    use krnl_struct
+    use krnl_lib
 !----------------------------------------------------------------------------------
     integer, intent(IN) :: elemnds, totquadpnts, totnds
     integer, dimension(:,:), intent(IN) :: elems
@@ -279,7 +279,7 @@ subroutine set_dbc_trans(totnds, bcs, gk, gm, gf)
 !----------------------------------------------------------------------------------
 ! Assign boundary conditions to the global stiffness and force matrices
 !----------------------------------------------------------------------------------
-    use bc_struct
+    use bc_lib
 !----------------------------------------------------------------------------------
     integer, intent(IN) :: totnds
     type(bc), intent(IN) :: bcs
@@ -315,7 +315,7 @@ subroutine set_dbc_ss(dof_mat, totnds, bcs, gk, gf)
 ! Assign boundary conditions to the global stiffness, mass and 
 ! force matrices
 !----------------------------------------------------------------------------------
-    use bc_struct
+    use bc_lib
 !----------------------------------------------------------------------------------
     integer, intent(IN) :: dof_mat, totnds
     type(bc), intent(IN) :: bcs
@@ -461,4 +461,4 @@ subroutine get_b2d(surfnds, dNdx, dNdy, B)
     end do
 end subroutine get_b2d
 
-end module gm_ops
+end module gm_lib

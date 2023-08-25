@@ -1,7 +1,6 @@
-module krnl_struct
+module krnl_lib
 implicit none
-private
-public kernel
+
 !-----------------------------------------------------------------------
 ! defining kernel data structure
 !-----------------------------------------------------------------------
@@ -12,18 +11,14 @@ type kernel
     real(8), dimension(:), allocatable :: n, nx, ny, nz
     real(8), dimension(:,:), allocatable :: nx_nx, ny_ny, nz_nz, n_nx, n_ny, n_nz, n_n
 end type
-end module krnl_struct
 
-module krnl_ops
-implicit none
 contains
 
 subroutine get_intrps(dim0, nds, elems, totelems, elemnds, eps, eta, zta, w, elemquadpnts, krnls, totquadpnts)
 !-----------------------------------------------------------------------
 ! Calculate and store Lagrange interpolants for each element
 !-----------------------------------------------------------------------
-    use krnl_struct
-    use eq_slvrs
+    use eqslvrs_lib
 !-----------------------------------------------------------------------
     integer, intent(IN) :: dim0, totelems, elemnds, elemquadpnts
     real(8), dimension(:,:), intent(IN) :: nds
@@ -609,7 +604,7 @@ subroutine jacobian_surface(nds, nbrnds, totnbrnds, dNdeps, dNdeta, n, nx, ny, d
 !-----------------------------------------------------------------------
 ! Calculate the jacobian matrix for a 2D element
 !-----------------------------------------------------------------------
-    use eq_slvrs
+    use eqslvrs_lib
     real(8), dimension(:,:), intent(IN) :: nds
     integer, dimension(:), intent(IN) :: nbrnds
     integer, intent(IN) :: totnbrnds
@@ -657,7 +652,7 @@ subroutine jacobian_volume(nds, nbrnds, totnbrnds, dNdeps, dNdeta, dNdzta, n, nx
 !-----------------------------------------------------------------------
 ! Calculate the jacobian matrix for a 3D element
 !-----------------------------------------------------------------------
-    use eq_slvrs
+    use eqslvrs_lib
     real(8), dimension(:,:), intent(IN) :: nds
     integer, dimension(:), intent(IN) :: nbrnds
     integer, intent(IN) :: totnbrnds
@@ -715,4 +710,4 @@ subroutine jacobian_volume(nds, nbrnds, totnbrnds, dNdeps, dNdeta, dNdzta, n, nx
     end if
 end subroutine jacobian_volume
 
-end module krnl_ops
+end module krnl_lib
