@@ -2,9 +2,9 @@
 FemWrks
 ----------------------------------------------------------------------------------
 FemWrks is a 2D/3D finite element solver written in modern fortran
-and is used to solve the general transport equation, incompressible
-navier-stokes equations and can be used for stress/deformation analysis.
-It can use first and second order elements and can solve the finite
+and is used to solve the incompressible navier-stokes equations,
+the general transport equation, and for stress/deformation analysis.
+It can use first and second order 2D/3D elements and can solve the finite
 element equations using element-by-element technique without the 
 need to form global matrices.
 ---------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ chmod u+x mk.sh run.sh genvid.sh
 ./mk.sh
 
 or if using FreeBSD use:
-bash mk.sh
+bash mk.sh run.sh genvid.sh
 
 This step can be skipped once code is compiled.
 
@@ -27,8 +27,6 @@ This step can be skipped once code is compiled.
 2. Copy a case study from the "examples" folder and rename folder to "in" and place it inside the "sim" directory
 
 3. edit the input parameters for the simulation as needed for all the files inside "in" folder and run the simulation by:
-
-chmod u+x run.sh 
 
 ./run.sh
 
